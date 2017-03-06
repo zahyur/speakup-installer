@@ -1,0 +1,13 @@
+[Unit]
+Description=Installer for Speakup
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/sysconfig/speakup-installer
+PIDFile=/var/run/speakup-installer.pid
+ExecStart=/usr/bin/speakup-installer $OPTIONS
+ExecStop=/bin/kill -9 $MAINPID
+Restart=never
+
+[Install]

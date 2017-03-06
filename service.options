@@ -1,0 +1,2 @@
+# Place the options for speakup-installer between the quotes on the following line.
+OPTIONS="--daemon "
