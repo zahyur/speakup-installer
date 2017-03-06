@@ -4,12 +4,12 @@
 # This script uses the same license as the Linux Kernel - http://kernel.org
 # Author: Zahari Yurukov <zahari.yurukov@gmail.com>
 # Version: 0.2
-# You can get the latest version from: http://zahari.tk/scripts/speakup-installer.sh
+# You can get the latest version from: https://github.com/zahyur/speakup-installer
 # This script installs the speakup screen reader for the currently active Linux kernel.
 # it watches for speakup's presence, and in case it couldn't find it proceeds with installation.
 # it uses a kernel from kernel.org, matching the version of the currently active kernel.
 # It installs only speakup and it's modules in the currently active kernel's directory, it doesn't install a whole kernel!
-# This script is tested only under Fedora 23 32-bit, but should work with all Fedora versions, and probably other distributions.
+# This script is tested only under Fedora 23, 24 and 25 - 32-bit, but should work with all Fedora versions, and probably other distributions.
 # The author of this script is not responsible for any damages resulting of the use of this script. You're using it on your own risk!
 
 
@@ -18,6 +18,9 @@ if [[ "$(whoami)" != "root" ]]; then
 	exit 1
 fi
 
+self="$(basename ${0})"
+arguments="${@}"
+LOGFILE=/var/log/speakup-installer.log
 initialdir="$(pwd)"
 builddir="/usr/src/kernels"
 if ! [[ -d ${builddir} && -w ${builddir} ]]; then
@@ -25,34 +28,70 @@ if ! [[ -d ${builddir} && -w ${builddir} ]]; then
 fi
 installdir="/usr/lib/modules/$(uname -r)/kernel/drivers/staging/speakup"
 read -a kernelVersion <<< "$(sed 's/\([^-]\)\(-.*\)$/\1 \2/' <<<"$(uname -r)")"
-isDaemon=true
 
-if [[ "$1" == "install" ]]; then
-	isDaemon=false
+helpdoc="\
+${self} version 0.2\n\
+\n\
+-i,--install <install-dir>    -  Install speakup in the given kernel modules directory\n\
+-d,--daemon         -  Run the script in the background.\n\
+-r,--reinstall          -  Backup speakup and reinstall. \n\
+-R,--restore       -  Restore speakup from backup.\n\
+-c,--clean         - Clean downloaded files.\n\
+-u,--uninstall           -  Remove speakup.\n\
+-C,--custom-speakup <directory>       -  Copy speakup's source from the given directory.\n\
+-E,--install-espeakup           - Download espeakup from github and install it.\n\
+-p,--prepare          - Install the nesessary packages for speakup compilation.\n\
+-h,--help - Print this message.\n\
+"
+
+getopt --test > /dev/null
+if [[ $? == 4 ]]; then
+ SHORT=i:drRcuC:Eph
+ LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,help
+ PARSED=`getopt --options $SHORT --longoptions $LONG --name "${self}" -- ${arguments}`
+ if [[ $? != 0 ]]; then
+  exit 2
+ fi
+
+ eval set -- "${PARSED}"
+
+ while true; do
+  case "$1" in
+   -i|--install)
 	if [[ -d "$2"} ]]; then
  	echo "Install directory set to $2"
  	installdir="$2"
 fi
-elif [[ "$1" == "daemon" ]]; then
-	isDaemon=true
-elif [[ "$1" == "reinstall" ]]; then
+    shift 2
+    ;;
+	  -d|--daemon)
+echo $$ > /var/run/speakup-installer.pid 
+exec > "${LOGFILE}" 2>&1
+    shift
+    ;;
+	  -r|--reinstall)
 	if [[ -d ${installdir} ]]; then
  	echo "Moveing current speakup to a backup location..."
  	mv "${installdir}" "${builddir}/speakup.backup"
 fi
-elif [[ "$1" == "restore" ]]; then
+    shift
+    ;;
+	  -R|--restore)
 	echo "Restoring speakup from the last backup..."
 	mv "${builddir}/speakup.backup" "${installdir}"
 	exit $?
-elif [[ "$1" == "clean" ]]; then
+    ;;
+   -c|--clean)
 	echo "Cleaning downloaded files..."
 	rm -rf ${builddir}/linux-${kernelVersion[0]}*
 	exit $?
-	elif [[ "$1" == "uninstall" ]]; then
+    ;;
+   -u|--uninstall)
 		echo "Removeing speakup from ${installdir}..."
 		rm -rf "${installdir}"
 		exit $?
-	elif [[ "$1" == "custom-speakup" ]]; then
+    ;;
+	  -C|--custom-speakup)
 		if [[ -e "$2" ]]; then
   customSpeakup="$2"
   if [[ -d ${customSpeakup} ]]; then
@@ -62,7 +101,9 @@ elif [[ "$1" == "clean" ]]; then
  echo "Path $2 doesn't exists."
  exit 1
 		fi
-	elif [[ "$1" == "install-espeakup" ]]; then
+		shift 2
+    ;;
+	  -E|--install-espeakup)
 		cd ${builddir}
 		echo "Getting espeakup..."
 		git clone https://github.com/williamh/espeakup
@@ -75,7 +116,8 @@ elif [[ "$1" == "clean" ]]; then
 		make
 		make install
 		exit $?
-	elif [[ "$1" == "prepare" ]]; then
+    ;;
+    -p|--prepare)
 		echo "Preparing dependancies..."
 		depErrors=0
 		if [[ $(command -v dnf) ]]; then
@@ -106,10 +148,22 @@ elif [[ "$1" == "clean" ]]; then
 		fi
 		echo "Errors: ${depErrors}"
 		exit ${depErrors}
-	elif [ "$1" == "help" -o "$1" == "--help" -o "$1" == "-h" ];then
-		echo "Usage: $(basename $0) [prepare|reinstall|restore|clean|uninstall|install-espeakup]"
+	    ;;
+    -h|--help)
+    echo -e "${helpdoc}"
 		exit 0
-	fi
+		;;
+   --)
+    shift
+    break
+    ;;
+   *)
+    echo "Programming error" >> "${LOGFILE}"
+    exit 3
+    ;;
+  esac
+ done
+fi
 
 	# functions
 	function verify-kernel-download {
@@ -132,7 +186,7 @@ elif [[ "$1" == "clean" ]]; then
 	echo "Checking for speakup..."
 	while [[ -e "${installdir}/speakup.ko" ]]; do
 		echo "Speakup is installed for the current curnel. Re-check in 60 seconds. Press Control+C to abort."
-		echo "Use '$(basename $0) reinstall' or remove ${installdir} to reinstall..."
+		echo "Use '${self} --reinstall' or remove ${installdir} to reinstall..."
 		sleep 60
 	done
 
