@@ -29,6 +29,7 @@ if ! [[ -d ${builddir} && -w ${builddir} ]]; then
 fi
 installdir="/usr/lib/modules/$(uname -r)/kernel/drivers/staging/speakup"
 read -a kernelVersion <<< "$(sed 's/\([^-]\)\(-.*\)$/\1 \2/' <<<"$(uname -r)")"
+kernelSource=linux-${kernelVersion[0]}
 
 helpdoc="\
 ${self} version 0.2\n\
@@ -48,8 +49,8 @@ ${self} version 0.2\n\
 
 getopt --test > /dev/null
 if [[ $? == 4 ]]; then
- SHORT=i:drRcuC:EpPh
- LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,help
+ SHORT=i:drRcuC:EpPK:h
+ LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-source:,help
  PARSED=`getopt --options $SHORT --longoptions $LONG --name "${self}" -- ${arguments}`
  if [[ $? != 0 ]]; then
   exit 2
@@ -155,6 +156,10 @@ fi
 	    shouldPause=1
 	    shift
 	    ;;
+    -K|--kernel-source)
+	    kernelSource=$(readlink -qsf $2)
+	    shift 2
+	    ;;
     -h|--help)
     echo -e "${helpdoc}"
 		exit 0
@@ -207,7 +212,7 @@ fi
 	make-pause
 	cd "${builddir}"
 
-	if ! [[ -d linux-${kernelVersion[0]} ]]; then
+	if ! [[ -d ${kernelSource} ]]; then
 		while true; do
 			if ! [[ -f linux-${kernelVersion[0]}.tar.gz ]]; then
 				echo "Downloading kernel ${kernelVersion[0]} from kernel.org..."
@@ -243,10 +248,10 @@ fi
 			fi
 		done
 	else
-		echo "Kernel ${kernelVersion[0]} found in ${builddir}."
+		echo "Kernel ${kernelVersion[0]} found in $(readlink -qsf ${kernelSource})."
 	fi
 
-	cd linux-${kernelVersion[0]}
+	cd ${kernelSource} 
 
 if [[ "$?" == "0" ]]; then
 	if [[ ${customSpeakup} ]]; then
@@ -290,7 +295,6 @@ CONFIG_SPEAKUP_SYNTH_DUMMY=m' .config
 	make-pause
 
 	mkdir -p "${installdir}"
-	make-pause
 	echo "Copying speakup to ${installdir}"
 	cp drivers/staging/speakup/speakup*.ko "${installdir}"
 
