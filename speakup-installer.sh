@@ -20,6 +20,7 @@ fi
 
 self="$(basename ${0})"
 arguments="${@}"
+shouldPause=0
 LOGFILE=/var/log/speakup-installer.log
 initialdir="$(pwd)"
 builddir="/usr/src/kernels"
@@ -41,13 +42,14 @@ ${self} version 0.2\n\
 -C,--custom-speakup <directory>       -  Copy speakup's source from the given directory.\n\
 -E,--install-espeakup           - Download espeakup from github and install it.\n\
 -p,--prepare          - Install the nesessary packages for speakup compilation.\n\
+-P,--pause      -  make pause between steps\n\
 -h,--help - Print this message.\n\
 "
 
 getopt --test > /dev/null
 if [[ $? == 4 ]]; then
- SHORT=i:drRcuC:Eph
- LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,help
+ SHORT=i:drRcuC:EpPh
+ LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,help
  PARSED=`getopt --options $SHORT --longoptions $LONG --name "${self}" -- ${arguments}`
  if [[ $? != 0 ]]; then
   exit 2
@@ -149,6 +151,10 @@ fi
 		echo "Errors: ${depErrors}"
 		exit ${depErrors}
 	    ;;
+    -P|--pause)
+	    shouldPause=1
+	    shift
+	    ;;
     -h|--help)
     echo -e "${helpdoc}"
 		exit 0
@@ -183,6 +189,13 @@ fi
 		done
 	}
 
+	function make-pause {
+   if [[ "${shouldPause}" == "1" ]]; then
+	   read -p "*** Press any key to continue or Control+C to abort ***" -n 1
+	   echo -e "\n"
+   fi
+	}
+
 	echo "Checking for speakup..."
 	while [[ -e "${installdir}/speakup.ko" ]]; do
 		echo "Speakup is installed for the current curnel. Re-check in 60 seconds. Press Control+C to abort."
@@ -191,6 +204,7 @@ fi
 	done
 
 	echo "Speakup not found in the current kernel's directory - installing."
+	make-pause
 	cd "${builddir}"
 
 	if ! [[ -d linux-${kernelVersion[0]} ]]; then
@@ -239,9 +253,11 @@ if [[ "$?" == "0" ]]; then
 		echo "Copying ${customSpeakup} to $(pwd)/drivers/staging/speakup/"
 cp -R ${customSpeakup} drivers/staging/speakup/
 fi
+	make-pause
 	echo "Executing make oldconfig..."
 	yes '' | make oldconfig
 
+	make-pause
 	echo "Editing makefile..."
 	sed -i 's/EXTRAVERSION =.*$/EXTRAVERSION = '"${kernelVersion[1]}"'/' Makefile
 
@@ -259,40 +275,51 @@ CONFIG_SPEAKUP_SYNTH_SPKOUT=m\
 CONFIG_SPEAKUP_SYNTH_TXPRT=m\
 CONFIG_SPEAKUP_SYNTH_DUMMY=m' .config
 
+	make-pause
 	echo "Executing make prepare..."
 	make prepare
 
+	make-pause
 	echo "Executing make modules_prepare..."
 	make modules_prepare
 
+	make-pause
 	echo "Building speakup..."
 	make SUBDIRS=scripts/mod
 	make SUBDIRS=drivers/staging/speakup/ modules
+	make-pause
 
 	mkdir -p "${installdir}"
+	make-pause
 	echo "Copying speakup to ${installdir}"
 	cp drivers/staging/speakup/speakup*.ko "${installdir}"
 
+	make-pause
 	cd /usr/lib/modules/$(uname -r)/
 	echo "executing depmod..."
 	depmod
+	make-pause
 	echo "Executing modprobe speakup_soft..."
 	modprobe speakup_soft
 
+	make-pause
 	echo "----------"
 	echo "result:"
 	echo "----------"
 	echo "Listing ${installdir}"
 	echo "----------"
 	ls "${installdir}"
+	make-pause
 	echo "----------"
 	echo "lsmod:"
 	echo "----------"
 	lsmod | grep speakup
+	make-pause
 	echo "----------"
 	echo "dmesg:"
 	echo "----------"
 	dmesg | grep speakup
+	make-pause
 	echo "----------"
 	echo "modinfo:"
 	echo "----------"
@@ -300,6 +327,7 @@ CONFIG_SPEAKUP_SYNTH_DUMMY=m' .config
 	echo "----------"
 fi
 
+	make-pause
 	#if it was successfull, remove the backup, else - restore (if possible).
 	if [[ -e "${installdir}/speakup.ko" ]]; then
 		echo "Installation successfull! Removing backup..."
@@ -313,6 +341,7 @@ fi
 
 	echo "----------"
 
+	make-pause
 	#restart the script, in case this is unattended run
 	cd "${initialdir}"
 	$0
