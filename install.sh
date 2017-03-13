@@ -15,10 +15,8 @@ echo "Copying the service..."
 cp speakup-installer.service /usr/lib/systemd/system/speakup-installer.service
 cp -u service.options /etc/sysconfig/speakup-installer 
 
-echo "Enabling the service..."
-systemctl enable speakup-installer
 echo "Starting the service..."
-systemctl start speakup-installer
+systemctl restart speakup-installer
 
 if [[ "$?" == "0" ]]; then
  result=""
