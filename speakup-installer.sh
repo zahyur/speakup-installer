@@ -21,6 +21,7 @@ fi
 self="$(basename ${0})"
 arguments="${@}"
 shouldPause=0
+shouldVerify=1
 LOGFILE=/var/log/speakup-installer.log
 initialdir="$(pwd)"
 builddir="/usr/src/kernels"
@@ -44,13 +45,15 @@ ${self} version 0.2\n\
 -E,--install-espeakup           - Download espeakup from github and install it.\n\
 -p,--prepare          - Install the nesessary packages for speakup compilation.\n\
 -P,--pause      -  make pause between steps\n\
+-K,--kernel-source      -  set the directory with the unpacked kernel source\n\
+-t,--trust     - Don't check the integrity of the archive or the signature of the tarball\n\
 -h,--help - Print this message.\n\
 "
 
 getopt --test > /dev/null
 if [[ $? == 4 ]]; then
- SHORT=i:drRcuC:EpPK:h
- LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-source:,help
+ SHORT=i:drRcuC:EpPK:th
+ LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-source:,trust,help
  PARSED=`getopt --options $SHORT --longoptions $LONG --name "${self}" -- ${arguments}`
  if [[ $? != 0 ]]; then
   exit 2
@@ -160,6 +163,10 @@ fi
 	    kernelSource=$(readlink -qsf $2)
 	    shift 2
 	    ;;
+    -t|--trust)
+	    shouldVerify=0
+	    shift
+	    ;;
     -h|--help)
     echo -e "${helpdoc}"
 		exit 0
@@ -217,6 +224,11 @@ fi
 			if ! [[ -f linux-${kernelVersion[0]}.tar.gz ]]; then
 				echo "Downloading kernel ${kernelVersion[0]} from kernel.org..."
 				wget -q -c -N https://www.kernel.org/pub/linux/kernel/v${kernelVersion[0]:0:1}.x/linux-${kernelVersion[0]}.tar.gz
+			fi
+			if [[ "${shouldVerify}" == "0" ]]; then
+				echo "Unpacking linux-${kernelVersion[0]}.tar.gz..."
+tar -xf linux-${kernelVersion[0]}.tar.gz
+				break
 			fi
 			if ! [[ -f linux-${kernelVersion[0]}.tar.sign ]]; then
 				echo "Downloading signature..."
