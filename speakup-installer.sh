@@ -45,15 +45,17 @@ ${self} version 0.2\n\
 -E,--install-espeakup           - Download espeakup from github and install it.\n\
 -p,--prepare          - Install the nesessary packages for speakup compilation.\n\
 -P,--pause      -  make pause between steps\n\
+-k,--kernel-version      -  set the kernel version, like 4.9.13\n\
 -K,--kernel-source      -  set the directory with the unpacked kernel source\n\
 -t,--trust     - Don't check the integrity of the archive or the signature of the tarball\n\
 -h,--help - Print this message.\n\
+\n\
 "
 
 getopt --test > /dev/null
 if [[ $? == 4 ]]; then
- SHORT=i:drRcuC:EpPK:th
- LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-source:,trust,help
+ SHORT=i:drRcuC:EpPk:K:th
+ LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-version:,kernel-source:,trust,help
  PARSED=`getopt --options $SHORT --longoptions $LONG --name "${self}" -- ${arguments}`
  if [[ $? != 0 ]]; then
   exit 2
@@ -158,6 +160,12 @@ fi
     -P|--pause)
 	    shouldPause=1
 	    shift
+	    ;;
+    -k|--kernel-version)
+	    installdir=$(echo ${installdir}|sed 's/'${kernelVersion[0]}'/'$2'/')
+	    kernelSource=$(echo ${kernelSource}|sed 's/'${kernelVersion[0]}'/'$2'/')
+	    kernelVersion[0]=$2
+	    shift 2
 	    ;;
     -K|--kernel-source)
 	    kernelSource=$(readlink -qsf $2)
@@ -311,7 +319,7 @@ CONFIG_SPEAKUP_SYNTH_DUMMY=m' .config
 	cp drivers/staging/speakup/speakup*.ko "${installdir}"
 
 	make-pause
-	cd /usr/lib/modules/$(uname -r)/
+	cd ${installdir}/../../..
 	echo "executing depmod..."
 	depmod
 	make-pause
