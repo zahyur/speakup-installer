@@ -46,6 +46,7 @@ ${self} version 0.2\n\
 -p,--prepare          - Install the nesessary packages for speakup compilation.\n\
 -P,--pause      -  make pause between steps\n\
 -k,--kernel-version      -  set the kernel version, like 4.9.13\n\
+-x,--kernel-extra      -  set the kernel version, like -200.fc25.i686+PAE\n\
 -K,--kernel-source      -  set the directory with the unpacked kernel source\n\
 -t,--trust     - Don't check the integrity of the archive or the signature of the tarball\n\
 -h,--help - Print this message.\n\
@@ -54,8 +55,8 @@ ${self} version 0.2\n\
 
 getopt --test > /dev/null
 if [[ $? == 4 ]]; then
- SHORT=i:drRcuC:EpPk:K:th
- LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-version:,kernel-source:,trust,help
+ SHORT=i:drRcuC:EpPk:x:K:th
+ LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-version:,kernel-extra:,kernel-source:,trust,help
  PARSED=`getopt --options $SHORT --longoptions $LONG --name "${self}" -- ${arguments}`
  if [[ $? != 0 ]]; then
   exit 2
@@ -165,6 +166,11 @@ fi
 	    installdir=$(echo ${installdir}|sed 's/'${kernelVersion[0]}'/'$2'/')
 	    kernelSource=$(echo ${kernelSource}|sed 's/'${kernelVersion[0]}'/'$2'/')
 	    kernelVersion[0]=$2
+	    shift 2
+	    ;;
+    -x|--kernel-extra)
+	    installdir=$(echo ${installdir}|sed 's/'${kernelVersion[1]}'/'$2'/')
+	    kernelVersion[1]=$2
 	    shift 2
 	    ;;
     -K|--kernel-source)
