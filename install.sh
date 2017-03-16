@@ -15,6 +15,9 @@ echo "Copying the service..."
 cp speakup-installer.service /usr/lib/systemd/system/speakup-installer.service
 cp -u service.options /etc/sysconfig/speakup-installer 
 
+echo "Reloading services..."
+systemctl daemon-reload
+
 echo "Starting the service..."
 systemctl restart speakup-installer
 
