@@ -1,4 +1,4 @@
-#This is an installer for the speakup screen reader.
+# An installer for the speakup screen reader.
 In case the Linux distribution been used has excluded it from the kernel modules distributed with their custom kernel, or you want to compile a custom speakup source code.
 
 This script is not part of the Linux Kernel, nor the speakup screen reader.
@@ -16,14 +16,14 @@ This script installs the speakup screen reader for the currently active Linux ke
 
  The author of this script is not responsible for any damages resulting of the use of this script. You're using it on your own risk!
 
-#Usage:
+## Usage:
 Just run the script as root or with sudo.
 if you haven't compiled speakup, other modules or the Linux kernel before, run `./speakup-installer.sh --prepare` first.
 The ./install.sh script will do that for you, as well as installing a systemd service.
 The service will write a logfile in /var/log/speakup-installer.log.
 If you want to install espeakup as well, run `./speakup-installer --install-espeakup`.
 
-#Options:
+## Options:
 
 -i,--installdir <install-dir>    -  Install speakup in the given kernel modules directory (e. g. /usr/lib/modules/4.9.13-201.fc25.i686+PAE).
 
