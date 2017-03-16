@@ -18,6 +18,7 @@ if [[ "$(whoami)" != "root" ]]; then
 	exit 1
 fi
 
+STARTEDAT=$(date -u)
 self="$(basename ${0})"
 arguments="${@}"
 shouldPause=0
@@ -79,6 +80,7 @@ fi
 	  -d|--daemon)
 echo $$ > /var/run/speakup-installer.pid 
 exec > "${LOGFILE}" 2>&1
+echo "Started at: ${STARTEDAT}"
     shift
     ;;
 	  -r|--reinstall)
@@ -241,6 +243,7 @@ fi
 	echo "Speakup not found in the current kernel's directory - installing."
 	make-pause
 	cd "${builddir}"
+	echo "Date is: $(date -u)"
 
 	if ! [[ -d ${kernelSource} ]]; then
 		while true; do
@@ -383,6 +386,7 @@ fi
 	fi
 
 	echo "----------"
+	echo "Date is: $(date -u)"
 
 	make-pause
 	#restart the script, in case this is unattended run
