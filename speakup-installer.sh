@@ -35,7 +35,7 @@ kernelSource=linux-${kernelVersion[0]}
 helpdoc="\
 ${self} version 0.2\n\
 \n\
--i,--install <install-dir>    -  Install speakup in the given kernel modules directory\n\
+-i,--installdir <install-dir>    -  Install speakup in the given kernel modules directory\n\
 -d,--daemon         -  Run the script in the background.\n\
 -r,--reinstall          -  Backup speakup and reinstall. \n\
 -R,--restore       -  Restore speakup from backup.\n\
@@ -56,7 +56,7 @@ ${self} version 0.2\n\
 getopt --test > /dev/null
 if [[ $? == 4 ]]; then
  SHORT=i:drRcuC:EpPk:x:K:th
- LONG=install:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-version:,kernel-extra:,kernel-source:,trust,help
+ LONG=installdir:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-version:,kernel-extra:,kernel-source:,trust,help
  PARSED=`getopt --options $SHORT --longoptions $LONG --name "${self}" -- ${arguments}`
  if [[ $? != 0 ]]; then
   exit 2
@@ -66,10 +66,13 @@ if [[ $? == 4 ]]; then
 
  while true; do
   case "$1" in
-   -i|--install)
-	if [[ -d "$2"} ]]; then
- 	echo "Install directory set to $2"
- 	installdir="$2"
+   -i|--installdir)
+	if [[ -d "$2" ]]; then
+ 	installdir="$2/kernel/drivers/staging/speakup"
+ 	echo "Install directory set to ${installdir}"
+else
+	echo "$2 doesn't exists or is not a directory!"
+	exit 1
 fi
     shift 2
     ;;
@@ -222,6 +225,12 @@ fi
    fi
 	}
 
+if ! [[ -e  $(sed 's/^\(.*\)\/drivers\/staging\/speakup/\1/' <<<${installdir}) ]]; then
+	echo "It looks like there are no kernel modules in "$(sed 's/^\(.*\)\/drivers\/staging\/speakup/\1/' <<<${installdir})
+	echo "You may have entered wrong kernel version or extra version."
+ exit 1
+fi
+
 	echo "Checking for speakup..."
 	while [[ -e "${installdir}/speakup.ko" ]]; do
 		echo "Speakup is installed for the current curnel. Re-check in 60 seconds. Press Control+C to abort."
@@ -282,17 +291,20 @@ tar -xf linux-${kernelVersion[0]}.tar.gz
 if [[ "$?" == "0" ]]; then
 	if [[ ${customSpeakup} ]]; then
 		echo "Copying ${customSpeakup} to $(pwd)/drivers/staging/speakup/"
+make-pause
 cp -R ${customSpeakup} drivers/staging/speakup/
 fi
-	make-pause
+	
 	echo "Executing make oldconfig..."
+make-pause
 	yes '' | make oldconfig
 
-	make-pause
 	echo "Editing makefile..."
+	make-pause
 	sed -i 's/EXTRAVERSION =.*$/EXTRAVERSION = '"${kernelVersion[1]}"'/' Makefile
 
 	echo "Editing .config..."
+	make-pause
 	sed -i -e 's/\# CONFIG_SPEAKUP is not set/CONFIG_SPEAKUP=m/' -e '/CONFIG_SPEAKUP=m/a \
 CONFIG_SPEAKUP_SYNTH_ACNTSA=m\
 CONFIG_SPEAKUP_SYNTH_APOLLO=m\
@@ -306,30 +318,31 @@ CONFIG_SPEAKUP_SYNTH_SPKOUT=m\
 CONFIG_SPEAKUP_SYNTH_TXPRT=m\
 CONFIG_SPEAKUP_SYNTH_DUMMY=m' .config
 
-	make-pause
 	echo "Executing make prepare..."
+	make-pause
 	make prepare
 
-	make-pause
 	echo "Executing make modules_prepare..."
+	make-pause
 	make modules_prepare
 
-	make-pause
 	echo "Building speakup..."
+	make-pause
 	make SUBDIRS=scripts/mod
 	make SUBDIRS=drivers/staging/speakup/ modules
-	make-pause
 
-	mkdir -p "${installdir}"
 	echo "Copying speakup to ${installdir}"
+	make-pause
+	mkdir -p "${installdir}"
 	cp drivers/staging/speakup/speakup*.ko "${installdir}"
 
-	make-pause
 	cd ${installdir}/../../..
 	echo "executing depmod..."
-	depmod
 	make-pause
+	depmod
+
 	echo "Executing modprobe speakup_soft..."
+	make-pause
 	modprobe speakup_soft
 
 	make-pause
