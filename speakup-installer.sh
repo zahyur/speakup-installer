@@ -304,7 +304,10 @@ make-pause
 
 	echo "Editing makefile..."
 	make-pause
-	sed -i 's/EXTRAVERSION =.*$/EXTRAVERSION = '"${kernelVersion[1]}"'/' Makefile
+	IFS=$.
+	tempVersion=(${kernelVersion[0]})
+	unset IFS
+	sed -e 's/^VERSION =.*$/VERSION = '"${tempVersion[0]}"'/' -e 's/^PATCHLEVEL =.*$/PATCHLEVEL = '"${tempVersion[1]}"'/' -e 's/^SUBLEVEL =.*$/SUBLEVEL = '"${tempVersion[2]}"'/' -e 's/^EXTRAVERSION =.*$/EXTRAVERSION = '"${kernelVersion[1]}"'/' -i Makefile
 
 	echo "Editing .config..."
 	make-pause
