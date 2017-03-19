@@ -110,6 +110,56 @@ ${self} version 0.2\n\
 	echo "----------"
 	}
 
+	function prepare-speakup {
+		echo "Preparing dependancies..."
+		depErrors=0
+		if [[ $(command -v dnf) ]]; then
+			pm_cmd=dnf
+			dnf builddep -y kernel-core
+			depErrors=$((${depErrors}+$?))
+		elif [[ $(command -v yum) ]]; then
+			pm_cmd=yum
+			yum-builddep -y kernel-core
+   depErrors=$((${depErrors}+$?))
+		elif [[ $(command -v apt-get) ]]; then
+			pm_cmd=apt-get
+			apt-get build-dep -y linux-image-$(uname -r)
+   depErrors=$((${depErrors}+$?))
+		elif [[ $(command -v pacman) ]]; then
+			pm_cmd=pacman
+			pacman --needed -Syu base-devel linux-headers xmlto docbook-xsl kmod inetutils bc
+   depErrors=$((${depErrors}+$?))
+		fi
+		if [[ ${pm_cmd} == "dnf" || ${pm_cmd} == "yum" ]]; then
+			# RHEL/Fedora based package names
+			${pm_cmd} install -y gcc make kernel-headers wget gnupg tar gzip git espeak-devel
+   depErrors=$((${depErrors}+$?))
+		elif [[ ${pm_cmd} == "apt-get" ]]; then
+			# Debian/Ubuntu based package names
+			${pm_cmd} install -y gcc make wget gnupg tar gzip linux-headers-$(uname -r) build-essential kernel-package fakeroot libncurses5-dev libssl-dev ccache git espeak-dev
+   depErrors=$((${depErrors}+$?))
+		fi
+		echo "Errors: ${depErrors}"
+		exit ${depErrors}
+	}
+
+	function install-espeakup {
+		cd ${builddir}
+		if ! [[ -d espeakup ]]; then
+		echo "Getting espeakup..."
+		git clone https://github.com/williamh/espeakup
+	fi
+		cd espeakup
+		if [[ "$?" != "0" ]]; then
+ echo "Error getting espeakup! Exiting..."
+ exit 1
+		fi
+		echo "Building espeakup..."
+		make
+		make install
+		exit $?
+	}
+
 
 getopt --test > /dev/null
 if [[ $? == 4 ]]; then
@@ -175,50 +225,10 @@ fi
 		shift 2
     ;;
 	  -E|--install-espeakup)
-		cd ${builddir}
-		echo "Getting espeakup..."
-		git clone https://github.com/williamh/espeakup
-		cd espeakup
-		if [[ "$?" != "0" ]]; then
- echo "Error getting espeakup! Exiting..."
- exit 1
-		fi
-		echo "Building espeakup..."
-		make
-		make install
-		exit $?
+		  install-espeakup
     ;;
     -p|--prepare)
-		echo "Preparing dependancies..."
-		depErrors=0
-		if [[ $(command -v dnf) ]]; then
-			pm_cmd=dnf
-			dnf builddep -y kernel-${kernelVersion[0]}
-			depErrors=$((${depErrors}+$?))
-		elif [[ $(command -v yum) ]]; then
-			pm_cmd=yum
-			yum-builddep -y kernel-${kernelVersion[0]}
-   depErrors=$((${depErrors}+$?))
-		elif [[ $(command -v apt-get) ]]; then
-			pm_cmd=apt-get
-			apt-get build-dep -y linux-image-$(uname -r)
-   depErrors=$((${depErrors}+$?))
-		elif [[ $(command -v pacman) ]]; then
-			pm_cmd=pacman
-			pacman --needed -Syu base-devel linux-headers xmlto docbook-xsl kmod inetutils bc
-   depErrors=$((${depErrors}+$?))
-		fi
-		if [[ ${pm_cmd} == "dnf" || ${pm_cmd} == "yum" ]]; then
-			# RHEL/Fedora based package names
-			${pm_cmd} install -y gcc make kernel-headers wget gnupg tar gzip git espeak-devel
-   depErrors=$((${depErrors}+$?))
-		elif [[ ${pm_cmd} == "apt-get" ]]; then
-			# Debian/Ubuntu based package names
-			${pm_cmd} install -y gcc make wget gnupg tar gzip linux-headers-$(uname -r) build-essential kernel-package fakeroot libncurses5-dev libssl-dev ccache git espeak-dev
-   depErrors=$((${depErrors}+$?))
-		fi
-		echo "Errors: ${depErrors}"
-		exit ${depErrors}
+	    prepare-speakup
 	    ;;
     -P|--pause)
 	    shouldPause=1
