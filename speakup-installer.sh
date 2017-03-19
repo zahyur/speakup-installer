@@ -50,14 +50,71 @@ ${self} version 0.2\n\
 -x,--kernel-extra      -  set the kernel version, like -200.fc25.i686+PAE\n\
 -K,--kernel-source      -  set the directory with the unpacked kernel source\n\
 -t,--trust     - Don't check the integrity of the archive or the signature of the tarball\n\
+-T,--test     - Output information regarding speakup's availability.\n\
 -h,--help - Print this message.\n\
 \n\
 "
 
+# functions
+	function verify-kernel-download {
+		file=$1
+		while true; do
+			result=$(gpg --verify ${file}.sign ${file} 2>&1)
+			code=$?
+			if [[ "${code}" == "2" ]]; then
+				fingerprint="$(grep 'RSA key' <<< "${result}" | sed 's/^.*ID\s\([^\s]\+\).*$/\1/g')"
+				gpg --keyserver pgpkeys.mit.edu --recv-key ${fingerprint}
+				gpg --fingerprint ${fingerprint}
+			elif [[ "${code}" == "1" ]]; then
+				return 1
+			elif [[ "${code}" == "0" ]]; then
+				return 0
+			fi
+		done
+	}
+
+	function make-pause {
+   if [[ "${shouldPause}" == "1" ]]; then
+	   read -p "*** Press any key to continue or Control+C to abort ***" -n 1
+	   echo -e "\n"
+   fi
+	}
+
+	function check-speakup {
+	echo "----------"
+	echo "result:"
+	echo "----------"
+	echo "Listing ${installdir}"
+	echo "----------"
+	ls "${installdir}"
+	make-pause
+	echo "----------"
+	echo "lsmod:"
+	echo "----------"
+	lsmod | grep speakup
+	make-pause
+	echo "----------"
+	echo "Listing the contents of /etc/modules-load.d/speakup.conf"
+	echo "----------"
+	cat /etc/modules-load.d/speakup.conf
+	make-pause
+	echo "----------"
+	echo "dmesg:"
+	echo "----------"
+	dmesg | grep speakup
+	make-pause
+	echo "----------"
+	echo "modinfo:"
+	echo "----------"
+	modinfo speakup
+	echo "----------"
+	}
+
+
 getopt --test > /dev/null
 if [[ $? == 4 ]]; then
- SHORT=i:drRcuC:EpPk:x:K:th
- LONG=installdir:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-version:,kernel-extra:,kernel-source:,trust,help
+ SHORT=i:drRcuC:EpPk:x:K:tTh
+ LONG=installdir:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-version:,kernel-extra:,kernel-source:,trust,test,help
  PARSED=`getopt --options $SHORT --longoptions $LONG --name "${self}" -- ${arguments}`
  if [[ $? != 0 ]]; then
   exit 2
@@ -186,6 +243,10 @@ fi
 	    shouldVerify=0
 	    shift
 	    ;;
+    -T|--test)
+	    check-speakup
+	    exit 0
+	    ;;
     -h|--help)
     echo -e "${helpdoc}"
 		exit 0
@@ -202,32 +263,7 @@ fi
  done
 fi
 
-	# functions
-	function verify-kernel-download {
-		file=$1
-		while true; do
-			result=$(gpg --verify ${file}.sign ${file} 2>&1)
-			code=$?
-			if [[ "${code}" == "2" ]]; then
-				fingerprint="$(grep 'RSA key' <<< "${result}" | sed 's/^.*ID\s\([^\s]\+\).*$/\1/g')"
-				gpg --keyserver pgpkeys.mit.edu --recv-key ${fingerprint}
-				gpg --fingerprint ${fingerprint}
-			elif [[ "${code}" == "1" ]]; then
-				return 1
-			elif [[ "${code}" == "0" ]]; then
-				return 0
-			fi
-		done
-	}
-
-	function make-pause {
-   if [[ "${shouldPause}" == "1" ]]; then
-	   read -p "*** Press any key to continue or Control+C to abort ***" -n 1
-	   echo -e "\n"
-   fi
-	}
-
-if ! [[ -e  $(sed 's/^\(.*\)\/drivers\/staging\/speakup/\1/' <<<${installdir}) ]]; then
+	if ! [[ -e  $(sed 's/^\(.*\)\/drivers\/staging\/speakup/\1/' <<<${installdir}) ]]; then
 	echo "It looks like there are no kernel modules in "$(sed 's/^\(.*\)\/drivers\/staging\/speakup/\1/' <<<${installdir})
 	echo "You may have entered wrong kernel version or extra version."
  exit 1
@@ -358,33 +394,7 @@ CONFIG_SPEAKUP_SYNTH_DUMMY=m' .config
 	fi
 
 	make-pause
-	echo "----------"
-	echo "result:"
-	echo "----------"
-	echo "Listing ${installdir}"
-	echo "----------"
-	ls "${installdir}"
-	make-pause
-	echo "----------"
-	echo "lsmod:"
-	echo "----------"
-	lsmod | grep speakup
-	make-pause
-	echo "----------"
-	echo "Listing the contents of /etc/modules-load.d/speakup.conf"
-	echo "----------"
-	cat /etc/modules-load.d/speakup.conf
-	make-pause
-	echo "----------"
-	echo "dmesg:"
-	echo "----------"
-	dmesg | grep speakup
-	make-pause
-	echo "----------"
-	echo "modinfo:"
-	echo "----------"
-	modinfo speakup
-	echo "----------"
+	check-speakup
 fi
 
 	make-pause

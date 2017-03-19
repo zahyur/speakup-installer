@@ -60,5 +60,8 @@ It could be an absolute path, or relative to the build directory (usr/src/kernel
 -t,--trust     - Don't check the integrity of the archive or the signature of the tarball.
 That could be dangerous for unattended installs, but sometimes you may want to save some time, when installing manually.
 
+-T,--test     - Output information regarding speakup's availability.
+That's the same information, Outputted  at the end of installation.
+
 -h,--help - Print this help and exit.
 
