@@ -351,6 +351,12 @@ CONFIG_SPEAKUP_SYNTH_DUMMY=m' .config
 	make-pause
 	modprobe speakup_soft
 
+	if ! [[ -e /etc/modules-load.d/speakup.conf ]]; then
+	echo "Creating /etc/modules-load.d/speakup.conf"
+	make-pause
+	echo speakup_soft > /etc/modules-load.d/speakup.conf
+	fi
+
 	make-pause
 	echo "----------"
 	echo "result:"
@@ -363,6 +369,11 @@ CONFIG_SPEAKUP_SYNTH_DUMMY=m' .config
 	echo "lsmod:"
 	echo "----------"
 	lsmod | grep speakup
+	make-pause
+	echo "----------"
+	echo "Listing the contents of /etc/modules-load.d/speakup.conf"
+	echo "----------"
+	cat /etc/modules-load.d/speakup.conf
 	make-pause
 	echo "----------"
 	echo "dmesg:"
