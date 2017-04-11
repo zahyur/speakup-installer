@@ -430,7 +430,7 @@ fi
 	make-pause
 	#restart the script, in case this is unattended run
 	cd "${initialdir}"
-	$0
+	$0 $@
 
 	exit 0
 
