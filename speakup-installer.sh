@@ -94,6 +94,11 @@ ${self} version 0.2\n\
 	lsmod | grep speakup
 	make-pause
 	echo "----------"
+	echo "Listing *synth* devices"
+	echo "----------"
+	ls /dev |grep synth
+	make-pause
+	echo "----------"
 	echo "Listing the contents of /etc/modules-load.d/speakup.conf"
 	echo "----------"
 	cat /etc/modules-load.d/speakup.conf
