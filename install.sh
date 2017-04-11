@@ -5,11 +5,17 @@ if [[ "$(whoami)" != "root" ]]; then
 	exit 1
 fi
 
+if ! [[ -e /usr/bin/speakup-installer ]]; then
+	 firstInstall=1
+fi
+
 echo "Copying the install script..."
 cp speakup-installer.sh /usr/bin/speakup-installer
 
+if [[ "${firstInstall}" == "1" ]]; then
 echo "Preparing the system for building speakup..."
 /usr/bin/speakup-installer --prepare
+fi
 
 echo "Copying the service..."
 cp speakup-installer.service /usr/lib/systemd/system/speakup-installer.service
