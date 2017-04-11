@@ -25,7 +25,7 @@ echo "Removing service configuration..."
 rm /etc/sysconfig/speakup-installer 
 
 echo "Removing log file..."
-rm /var/log/speakup-installer.log"
+rm /var/log/speakup-installer.log
 fi
 
 if [[ -e /usr/bin/speakup-installer || -e /usr/lib/systemd/system/speakup-installer.service ]]; then
