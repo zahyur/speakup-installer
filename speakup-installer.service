@@ -11,3 +11,4 @@ ExecStop=/bin/kill -9 $MAINPID
 Restart=never
 
 [Install]
+WantedBy=multi-user.target

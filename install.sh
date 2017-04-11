@@ -18,6 +18,9 @@ cp -u service.options /etc/sysconfig/speakup-installer
 echo "Reloading services..."
 systemctl daemon-reload
 
+echo "Enabling the service..."
+systemctl enable speakup-installer
+
 echo "Starting the service..."
 systemctl restart speakup-installer
 
