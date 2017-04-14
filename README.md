@@ -19,7 +19,7 @@ This script installs the speakup screen reader for the currently active Linux ke
 ## Usage:
 Just run the script as root or with sudo.
 if you haven't compiled speakup, other modules or the Linux kernel before, run `./speakup-installer.sh --prepare` first.
-The ./install.sh script will do that for you, as well as installing a systemd service.
+The ./install.sh script will do that for you the first time you install the speakup-installer, and it will install and enable a systemd service as well.
 The service will write a logfile in /var/log/speakup-installer.log.
 If you want to install espeakup as well, run `./speakup-installer --install-espeakup`.
 
@@ -64,4 +64,16 @@ That could be dangerous for unattended installs, but sometimes you may want to s
 That's the same information, Outputted  at the end of installation.
 
 -h,--help - Print this help and exit.
+
+
+## Note that the order of parameters sometimes matters.
+One reason for that is because  they're processed sequentially and immediately. 
+Therefore, keep that in mind, and if you don't get what you expect - change the order of the parameters.
+
+## Uninstall
+To uninstall the speakup-installer, run the uninstall.sh script:
+`./uninstall.sh`
+
+To remove the service.options file and the log file as well, pass the "all" option:
+`./uninstall.sh all`
 
