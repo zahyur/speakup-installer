@@ -209,7 +209,7 @@ fi
     ;;
    -c|--clean)
 	echo "Cleaning downloaded files..."
-	rm -rf ${builddir}/linux-${kernelVersion[0]}*
+	rm -rf ${builddir}/linux-*
 	exit $?
     ;;
    -u|--uninstall)
