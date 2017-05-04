@@ -300,7 +300,7 @@ fi
 		while true; do
 			if ! [[ -f linux-${kernelVersion[0]}.tar.gz ]]; then
 				echo "Downloading kernel ${kernelVersion[0]} from kernel.org..."
-				wget -q -c -N https://www.kernel.org/pub/linux/kernel/v${kernelVersion[0]:0:1}.x/linux-${kernelVersion[0]}.tar.gz
+				wget -q -c -N https://www.kernel.org/pub/linux/kernel/v${kernelVersion[0]:0:1}.x/linux-$(sed 's/\.0$//' <<< ${kernelVersion[0]}).tar.gz -O linux-${kernelVersion[0]}.tar.gz
 			fi
 			if [[ "${shouldVerify}" == "0" ]]; then
 				echo "Unpacking linux-${kernelVersion[0]}.tar.gz..."
@@ -309,7 +309,7 @@ tar -xf linux-${kernelVersion[0]}.tar.gz
 			fi
 			if ! [[ -f linux-${kernelVersion[0]}.tar.sign ]]; then
 				echo "Downloading signature..."
-				wget -q -c -N https://www.kernel.org/pub/linux/kernel/v${kernelVersion[0]:0:1}.x/linux-${kernelVersion[0]}.tar.sign
+				wget -q -c -N https://www.kernel.org/pub/linux/kernel/v${kernelVersion[0]:0:1}.x/linux-$(sed 's/\.0$//' <<< ${kernelVersion[0]}).tar.sign -O linux-${kernelVersion[0]}.tar.sign
 			fi
 			echo "Checking integrity of the archive..."
 			gunzip -t linux-${kernelVersion[0]}.tar.gz
@@ -339,6 +339,10 @@ tar -xf linux-${kernelVersion[0]}.tar.gz
 	else
 		echo "Kernel ${kernelVersion[0]} found in $(readlink -qsf ${kernelSource})."
 	fi
+
+if [[ -d linux-$(sed 's/\.0$//' <<< ${kernelVersion[0]}) ]]; then
+ mv linux-$(sed 's/\.0$//' <<< ${kernelVersion[0]}) linux-${kernelVersion[0]}
+fi
 
 	cd ${kernelSource} 
 
