@@ -21,6 +21,7 @@ fi
 STARTEDAT=$(date -u)
 self="$(basename ${0})"
 arguments="${@}"
+isDaemon=0
 shouldPause=0
 shouldVerify=1
 LOGFILE=/var/log/speakup-installer.log
@@ -190,6 +191,7 @@ fi
     shift 2
     ;;
 	  -d|--daemon)
+isDaemon=1
 echo $$ > /var/run/speakup-installer.pid 
 exec > "${LOGFILE}" 2>&1
 echo "Started at: ${STARTEDAT}"
@@ -432,9 +434,11 @@ fi
 	echo "Date is: $(date -u)"
 
 	make-pause
-	#restart the script, in case this is unattended run
+
+	if [[ "${isDaemon}" == "1" ]]; then
 	cd "${initialdir}"
 	$0 $@
+fi
 
 	exit 0
 
