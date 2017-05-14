@@ -402,7 +402,7 @@ CONFIG_SPEAKUP_SYNTH_DUMMY=m' .config
 	cd ${installdir}/../../..
 	echo "executing depmod..."
 	make-pause
-	depmod
+	depmod -a ${kernelVersion[0]}${kernelVersion[1]}
 
 	echo "Executing modprobe speakup_soft..."
 	make-pause
