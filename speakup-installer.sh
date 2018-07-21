@@ -37,6 +37,7 @@ kernelSource=linux-${kernelVersion[0]}
 helpdoc="\
 ${self} version 0.2\n\
 \n\
+-b,--builddir <build-dir>    -  Download the kernel and build speakup in the given directory\n\
 -i,--installdir <install-dir>    -  Install speakup in the given kernel modules directory\n\
 -d,--daemon         -  Run the script in the background.\n\
 -r,--reinstall          -  Backup speakup and reinstall. \n\
@@ -169,8 +170,8 @@ ${self} version 0.2\n\
 
 getopt --test > /dev/null
 if [[ $? == 4 ]]; then
- SHORT=i:drRcuC:EpPk:x:K:tTh
- LONG=installdir:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-version:,kernel-extra:,kernel-source:,trust,test,help
+ SHORT=b:i:drRcuC:EpPk:x:K:tTh
+ LONG=builddir:,installdir:,daemon,reinstall,restore,clean,uninstall,custom-speakup:,install-espeakup,prepare,pause,kernel-version:,kernel-extra:,kernel-source:,trust,test,help
  PARSED=`getopt --options $SHORT --longoptions $LONG --name "${self}" -- ${arguments}`
  if [[ $? != 0 ]]; then
   exit 2
@@ -180,6 +181,16 @@ if [[ $? == 4 ]]; then
 
  while true; do
   case "$1" in
+   -b|--builddir)
+	if [[ -d "$2" ]]; then
+ 	builddir="$2"
+ 	echo "Build directory set to ${builddir}"
+else
+	echo "$2 doesn't exists or is not a directory!"
+	exit 1
+fi
+    shift 2
+    ;;
    -i|--installdir)
 	if [[ -d "$2" ]]; then
  	installdir="$2/kernel/drivers/staging/speakup"
